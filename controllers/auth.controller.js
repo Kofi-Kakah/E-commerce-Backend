@@ -7,7 +7,6 @@ const santisizeUser = (user) => ({
     name: user.name,
     email: user.email,
     createdAt: user.createdAt,
-    product: user.product,
     wishlist: user.wishlist,
     cart: user.cart,
     address: user.addresses,
@@ -44,7 +43,7 @@ export const signup = async (req,res) => {
 
     } catch (error) {
         console.log("Error SigningUp")
-        res.status(500).json({ error: error.message || "Internal Server Error" })
+        return res.status(500).json({ error: error.message || "Internal Server Error" })
     }
 }
 export const login = async (req,res) => {
@@ -64,7 +63,7 @@ export const login = async (req,res) => {
             return res.status(400).json({ message: "Invalid password"})
         }
 
-        const token = await SignToken({ _id: User.id, email: User.email })
+        const token = await SignToken({ _id: User.id, email: User.email, role: User.role })
 
         res.cookie("auth_token", token, {
             httpOnly: true,
@@ -92,22 +91,15 @@ export const logout = async (req,res) => {
 }
 export const getme = async (req,res) => {
     try{
-        const userId = req.params.id;
+        const userId = Number(req.params.userId);
         const authenticatedUser = Number(req.user?._id);
 
-        if(!req.user || authenticatedUser !== Number(userId)) {
+        if(!req.user || authenticatedUser !== userId ) {
            return res.status(400).json({ message: "You are not authenticated to view another person profile"})
         }
 
         const user = await prisma.user.findUnique({ 
-            where: {id: Number(userId)},
-            include: {
-                addresses: true,
-                wishlist: true,
-                cart: true,
-                orders: true,
-                reviews: true
-            }
+            where: {id:userId}
         })
 
         if(!user) {
